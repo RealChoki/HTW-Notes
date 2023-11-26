@@ -1,0 +1,11 @@
+ORMN1014	Mountainbike Herren
+ORWN1014	Mountainbike Damen
+PG-ORBK014	014 Produktgruppe Mountainbikes
+
+gesamtmenge 113
+fertigungsauftragsnummer 1000042
+daten: 000001000042/PP01/FR
+
+Materialbelege nummer 4900032141
+
+materialbeleg 4900032136/2023   4900032140/2023   5000000176/2023
