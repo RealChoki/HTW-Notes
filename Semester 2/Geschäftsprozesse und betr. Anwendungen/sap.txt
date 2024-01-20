@@ -1,11 +1,4 @@
-ORMN1014	Mountainbike Herren
-ORWN1014	Mountainbike Damen
-PG-ORBK014	014 Produktgruppe Mountainbikes
-
-gesamtmenge 113
-fertigungsauftragsnummer 1000042
-daten: 000001000042/PP01/FR
-
-Materialbelege nummer 4900032141
-
-materialbeleg 4900032136/2023   4900032140/2023   5000000176/2023
+Störungskosten = Betriebsführenkosten z.B. 30000$ pro roboter pro jahr
+Wartungsvertrag = 10000$ pro jahr pro roboter (wartung für ein tag pro monat)
+zuferlassigkeit = 99,9%
+Anschaffungsksoten = 38000 (4000 pro station / 8000 pro haus laden / 15000 customizing kosten / 1000 Lieferkosten / 80000 projektkosten)
