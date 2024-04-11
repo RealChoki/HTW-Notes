@@ -1,0 +1,109 @@
+SELECT 
+    bez 
+FROM 
+    produkt
+WHERE
+    id = 1;
+    
+SELECT
+    name
+FROM 
+    kunde
+WHERE
+    EXTRACT (YEAR FROM geburtsdatum)  1950;
+    
+SELECT
+    name
+FROM 
+    kunde
+WHERE
+    EXTRACT (YEAR FROM geburtsdatum)  1979;
+    
+SELECT
+    
+FROM
+    produkt p
+    JOIN vertrag v ON p.id = v.produkt_fk
+    JOIN kunde k ON v.kunde_fk = k.id;
+    
+SELECT
+    k1.name,
+    k1.geburtsdatum,
+    k2.name,
+    k2.geburtsdatum
+FROM
+    kunde k1, kunde k2
+WHERE
+    k1.geburtsdatum = k2.geburtsdatum
+    AND
+    k1.id  k2.id;
+    
+SELECT
+    name
+FROM
+    kunde k
+    LEFT JOIN vertrag v ON k.id = v.kunde_fk
+WHERE
+    kunde_fk IS NULL;
+    
+SELECT
+    name
+FROM
+    kunde k
+    LEFT JOIN vertrag v ON k.id = v.kunde_fk
+    LEFT JOIN produkt p ON v.produkt_fk = p.id
+WHERE
+    p.id != 2;
+    
+    
+SELECT
+    dp.id
+FROM
+    deckungspreis dp
+WHERE
+    dp.preis = 12;
+    
+SELECT
+    k.name,
+    COUNT(kunde_fk) AS Anzahl
+FROM
+    kunde k
+    LEFT JOIN vertrag v ON k.id = v.kunde_fk
+GROUP BY
+    k.name;
+    
+SELECT
+    k.name,
+    COUNT(kunde_fk) AS Anzahl
+FROM
+    kunde k
+    LEFT JOIN vertrag v ON k.id = v.kunde_fk
+GROUP BY
+    k.name
+HAVING 
+    COUNT(kunde_fk) = 1;
+    
+
+WITH kunden_anzahl (name, anzahl) AS (
+    SELECT
+        k.name,
+        COUNT()
+    FROM
+        kunde k
+        JOIN vertrag v ON k.id = v.kunde_fk
+    GROUP BY
+        k.name
+)
+SELECT
+    name,
+    anzahl
+FROM
+    kunden_anzahl
+WHERE
+    anzahl = (
+        SELECT
+            MAX(anzahl)
+        FROM
+            kunden_anzahl
+    );
+
