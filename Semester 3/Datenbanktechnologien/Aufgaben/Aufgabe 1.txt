@@ -1,109 +1,122 @@
-SELECT 
-    bez 
-FROM 
-    produkt
-WHERE
-    id = 1;
-    
-SELECT
-    name
-FROM 
-    kunde
-WHERE
-    EXTRACT (YEAR FROM geburtsdatum)  1950;
-    
-SELECT
-    name
-FROM 
-    kunde
-WHERE
-    EXTRACT (YEAR FROM geburtsdatum)  1979;
-    
-SELECT
-    
-FROM
-    produkt p
-    JOIN vertrag v ON p.id = v.produkt_fk
-    JOIN kunde k ON v.kunde_fk = k.id;
-    
-SELECT
-    k1.name,
-    k1.geburtsdatum,
-    k2.name,
-    k2.geburtsdatum
-FROM
-    kunde k1, kunde k2
-WHERE
-    k1.geburtsdatum = k2.geburtsdatum
-    AND
-    k1.id  k2.id;
-    
-SELECT
-    name
-FROM
-    kunde k
-    LEFT JOIN vertrag v ON k.id = v.kunde_fk
-WHERE
-    kunde_fk IS NULL;
-    
-SELECT
-    name
-FROM
-    kunde k
-    LEFT JOIN vertrag v ON k.id = v.kunde_fk
-    LEFT JOIN produkt p ON v.produkt_fk = p.id
-WHERE
-    p.id != 2;
-    
-    
-SELECT
-    dp.id
-FROM
-    deckungspreis dp
-WHERE
-    dp.preis = 12;
-    
-SELECT
-    k.name,
-    COUNT(kunde_fk) AS Anzahl
-FROM
-    kunde k
-    LEFT JOIN vertrag v ON k.id = v.kunde_fk
-GROUP BY
-    k.name;
-    
-SELECT
-    k.name,
-    COUNT(kunde_fk) AS Anzahl
-FROM
-    kunde k
-    LEFT JOIN vertrag v ON k.id = v.kunde_fk
-GROUP BY
-    k.name
-HAVING 
-    COUNT(kunde_fk) = 1;
-    
+-- Aufgabe 1. Produkten mit dem ID == 1
 
-WITH kunden_anzahl (name, anzahl) AS (
-    SELECT
-        k.name,
-        COUNT()
-    FROM
-        kunde k
-        JOIN vertrag v ON k.id = v.kunde_fk
-    GROUP BY
-        k.name
-)
+SELECT bez
+FROM produkt
+WHERE id = 1;
+
+-- Aufgabe 2. Kunden die vor 1950 geboren worden sind 
+SELECT name 
+FROM kunde 
+WHERE EXTRACT(YEAR FROM GEBURTSDATUM) < 1950; 
+
+--auch possible: to_char(geburtsdatum 'yyyy') < 1950 
+
+-- Kundschaft Verteilung bei Quartalen 
+SELECT count(name), to_char(geburtsdatum, 'q')
+FROM kunde
+GROUP BY to_char(geburtsdatum, 'q');
+
+-- Aufgabe 3. Kunden alter als 40
+SELECT NAME
+FROM kunde
+WHERE 2019 - EXTRACT(YEAR FROM GEBURTSDATUM) > 40;
+
 SELECT
-    name,
-    anzahl
-FROM
-    kunden_anzahl
+    name
+FROM 
+    kunde
 WHERE
-    anzahl = (
-        SELECT
-            MAX(anzahl)
-        FROM
-            kunden_anzahl
+    EXTRACT (YEAR FROM geburtsdatum) < 1979;
+
+--Aufgabe 4. Alle Vertrage mit VID, relevanten Daten und Produktennamen 
+SELECT 
+    k.name AS kunde, 
+    v.id AS vertragsid, 
+    TO_CHAR(Versicherungsbeginn,'DD.MM.YYYY') AS Versicherungsbeginn, 
+    TO_CHAR(Versicherungsende,'DD.MM.YYYY') AS Versicherungsende, 
+    Bez AS produkt 
+FROM kunde k
+    INNER JOIN vertrag v ON k.id = v.kunde_fk 
+    INNER JOIN Produkt p ON v.produkt_fk = p.id
+ORDER BY kunde;
+    
+-- Aufgabe 5. Kunden mit gleichen Geburtstagen 
+SELECT 
+    k1.name,
+    k2.name,
+    TO_CHAR(k1.geburtsdatum,'DD.MM.YYYY') AS geburtsdatum, 
+    TO_CHAR(k2.geburtsdatum,'DD.MM.YYYY') AS geburtsdatum_1
+FROM kunde k1
+    JOIN kunde k2 ON k1.geburtsdatum = k2.geburtsdatum AND 
+        k1.id <> k2.id AND 
+        k1.name < k2.name;
+        
+    
+--Aufdgabe 6. Kunden mit keinen Vertragen 
+SELECT k.name
+FROM kunde k
+    LEFT JOIN vertrag v 
+        ON k.id = v.kunde_fk
+GROUP BY k.name
+HAVING count(v.id) = 0
+ORDER BY k.name;
+
+SELECT k.name
+FROM kunde k
+WHERE (k.id NOT IN (SELECT DISTINCT kunde_fk FROM vertrag))
+ORDER BY k.name;
+
+--Aufgabe 7. Kunden die KEINE Lebensversicherung haben 
+SELECT k.name
+FROM kunde k
+WHERE (
+    k.id NOT IN (
+        SELECT DISTINCT kunde_fk 
+        FROM vertrag v
+            INNER JOIN produkt p ON v.produkt_fk = p.id
+        WHERE p.bez LIKE 'Lebensversicherung'));
+        
+--Aufgabe 8. Vertrage mit dem Desckungspreis von 12. Abweichende Antwort hier 
+
+SELECT id AS vertragsid
+FROM vertrag 
+WHERE
+    id IN (
+        SELECT 
+            dep.id
+        FROM deckung de
+        INNER JOIN deckungsart dea ON de.deckungsart_fk = dea.id
+        INNER JOIN deckungsbetrag deb ON dea.id = deb.deckungsart_fk
+        INNER JOIN deckungspreis dep ON deb.id = dep.deckungsbetrag_fk
+        WHERE dep.preis = 12
     );
 
+
+--Aufgabe 9. Kunden und Anzahl der Vetrage  
+SELECT k.name, count(v.id) AS Anzahl 
+FROM kunde k
+    LEFT JOIN vertrag v 
+        ON k.id = v.kunde_fk
+GROUP BY k.name
+ORDER BY k.name ASC;
+
+--Aufgabe 10. Kunden mit nur einem Vetrag 
+SELECT k.name, count(v.id) AS Anzahl 
+FROM kunde k
+    LEFT JOIN vertrag v 
+        ON k.id = v.kunde_fk
+GROUP BY k.name
+HAVING count(v.id) = 1
+ORDER BY k.name ASC;
+
+--Aufgabe 11. Kunden mit den meisten Vetragen 
+SELECT k.name, count(v.id) AS Anzahl 
+FROM kunde k
+    LEFT JOIN vertrag v 
+        ON k.id = v.kunde_fk
+GROUP BY k.name
+HAVING count(v.id) = (
+    SELECT MAX(COUNT(ID)) 
+    FROM vertrag 
+    GROUP BY kunde_fk)
+ORDER BY k.name ASC;
