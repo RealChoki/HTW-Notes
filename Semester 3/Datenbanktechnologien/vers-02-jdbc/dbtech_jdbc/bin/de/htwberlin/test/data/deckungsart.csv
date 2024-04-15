@@ -1,0 +1,7 @@
+ID, Produkt_FK, KurzBez, Bez
+1,  1,          HT,      Haftung
+2,  1,          PS,      Personenschaden
+3,  2,          TD,      Tod
+4,  3,          BS,      Brandschaden
+5,  3,          GB,      Glasbruch
+6,  3,          FD,      Fahrraddiebstahl
