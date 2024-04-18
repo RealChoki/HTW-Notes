@@ -8,6 +8,7 @@ import java.math.BigDecimal;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
+import java.sql.SQLDataException;
 import java.sql.SQLException;
 import java.time.LocalDate;
 import java.util.LinkedList;
@@ -18,6 +19,8 @@ import org.slf4j.LoggerFactory;
 
 import de.htwberlin.domain.Kunde;
 import de.htwberlin.exceptions.DataException;
+import de.htwberlin.exceptions.KundeExistiertNichtException;
+import de.htwberlin.utils.JdbcUtils;
 
 /**
  * VersicherungJdbc
@@ -64,9 +67,30 @@ public class VersicherungJdbc implements IVersicherungJdbc {
 
   @Override
   public Kunde findKundeById(Integer id) {
-    L.info("id: " + id);
-    L.info("ende");
-    return null;
+      Kunde kunde = null;
+
+      PreparedStatement ps = null;
+      ResultSet rs = null;
+      try {
+          String sql = "SELECT * FROM kunde WHERE id = ?";
+          ps = useConnection().prepareStatement(sql);
+          ps.setInt(1, id);
+          rs = ps.executeQuery();
+  
+          if (rs.next()) {
+              kunde = new Kunde(id, rs.getString("name"), rs.getDate("geburtsdatum").toLocalDate()); // Create a new Kunde object
+          } else {
+              throw new KundeExistiertNichtException(id);
+          }
+  
+      } catch (SQLException e) {
+          throw new KundeExistiertNichtException(id);
+      } finally{
+        JdbcUtils.closeResultSetQuietly(rs);
+        JdbcUtils.closeStatementQuietly(ps);
+      }
+  
+      return kunde;
   }
 
   @Override
