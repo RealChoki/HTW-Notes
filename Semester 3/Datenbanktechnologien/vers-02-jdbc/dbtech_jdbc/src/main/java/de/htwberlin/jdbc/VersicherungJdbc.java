@@ -19,7 +19,10 @@ import org.slf4j.LoggerFactory;
 
 import de.htwberlin.domain.Kunde;
 import de.htwberlin.exceptions.DataException;
+import de.htwberlin.exceptions.DatumInVergangenheitException;
 import de.htwberlin.exceptions.KundeExistiertNichtException;
+import de.htwberlin.exceptions.ProduktExistiertNichtException;
+import de.htwberlin.exceptions.VertragExistiertBereitsException;
 import de.htwberlin.utils.JdbcUtils;
 
 /**
@@ -94,13 +97,62 @@ public class VersicherungJdbc implements IVersicherungJdbc {
   }
 
   @Override
-  public void createVertrag(Integer id, Integer produktId, Integer kundenId, LocalDate versicherungsbeginn) {
-    L.info("id: " + id);
-    L.info("produktId: " + produktId);
-    L.info("kundenId: " + kundenId);
-    L.info("versicherungsbeginn: " + versicherungsbeginn);
+public void createVertrag(Integer id, Integer produktId, Integer kundenId, LocalDate versicherungsbeginn) {
+    PreparedStatement ps = null;
+    ResultSet rs = null;
+
+    try {
+        // Check if Vertrag already exists
+        String sql = "SELECT * FROM Vertrag WHERE id = ?";
+        ps = useConnection().prepareStatement(sql);
+        ps.setInt(1, id);
+        rs = ps.executeQuery();
+        if (rs.next()) {
+            throw new VertragExistiertBereitsException(id);
+        }
+
+        // Check if Produkt exists
+        sql = "SELECT * FROM Produkt WHERE id = ?";
+        ps = useConnection().prepareStatement(sql);
+        ps.setInt(1, produktId);
+        rs = ps.executeQuery();
+        if (!rs.next()) {
+            throw new ProduktExistiertNichtException(produktId);
+        }
+
+        // Check if Kunde exists
+        sql = "SELECT * FROM Kunde WHERE id = ?";
+        ps = useConnection().prepareStatement(sql);
+        ps.setInt(1, kundenId);
+        rs = ps.executeQuery();
+        if (!rs.next()) {
+            throw new KundeExistiertNichtException(kundenId);
+        }
+
+        // Check if Versicherungsbeginn is in the past
+        if (versicherungsbeginn.isBefore(LocalDate.now())) {
+            throw new DatumInVergangenheitException(versicherungsbeginn);
+        }
+
+        // Insert the new Vertrag
+        sql = "INSERT INTO Vertrag (id, produktId, kundenId, versicherungsbeginn) VALUES (?, ?, ?, ?)";
+        ps = useConnection().prepareStatement(sql);
+        ps.setInt(1, id);
+        ps.setInt(2, produktId);
+        ps.setInt(3, kundenId);
+        ps.setDate(4, java.sql.Date.valueOf(versicherungsbeginn));
+        ps.executeUpdate();
+
+    } catch (SQLException e) {
+        // Handle SQL exception
+        L.error("SQL error: " + e.getMessage());
+    } finally {
+        JdbcUtils.closeResultSetQuietly(rs);
+        JdbcUtils.closeStatementQuietly(ps);
+    }
+
     L.info("ende");
-  }
+}
 
   @Override
   public BigDecimal calcMonatsrate(Integer vertragsId) {
