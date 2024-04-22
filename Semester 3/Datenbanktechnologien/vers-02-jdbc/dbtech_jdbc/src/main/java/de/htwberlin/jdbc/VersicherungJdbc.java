@@ -57,7 +57,7 @@ public class VersicherungJdbc implements IVersicherungJdbc {
       	ps = useConnection().prepareStatement(sql);
         rs = ps.executeQuery();
         
-        if(rs.next()){
+        while(rs.next()){
           kurzBez.add(rs.getString("kurzbez"));
         }
     }
@@ -134,13 +134,17 @@ public void createVertrag(Integer id, Integer produktId, Integer kundenId, Local
             throw new KundeExistiertNichtException(kundenId);
         }
 
+        // Calculate Versicherungsende
+        LocalDate versicherungsende = versicherungsbeginn.plusYears(1).minusDays(1);
+
         // Insert the new Vertrag
-        sql = "INSERT INTO Vertrag (id, produktId, kundenId, versicherungsbeginn) VALUES (?, ?, ?, ?)";
+        sql = "INSERT INTO Vertrag (id, produktId, kundenId, versicherungsbeginn, Versicherungsende) VALUES (?, ?, ?, ?, ?)";
         ps = useConnection().prepareStatement(sql);
         ps.setInt(1, id);
         ps.setInt(2, produktId);
         ps.setInt(3, kundenId);
         ps.setDate(4, java.sql.Date.valueOf(versicherungsbeginn));
+        ps.setDate(5, java.sql.Date.valueOf(versicherungsende)); // Set Versicherungsende
         ps.executeUpdate();
 
     } catch (SQLException e) {
