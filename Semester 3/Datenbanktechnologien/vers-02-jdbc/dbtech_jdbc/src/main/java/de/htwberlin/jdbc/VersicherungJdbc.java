@@ -57,7 +57,7 @@ public class VersicherungJdbc implements IVersicherungJdbc {
       	ps = useConnection().prepareStatement(sql);
         rs = ps.executeQuery();
         
-        while(rs.next()){
+        if(rs.next()){
           kurzBez.add(rs.getString("kurzbez"));
         }
     }
@@ -102,6 +102,11 @@ public void createVertrag(Integer id, Integer produktId, Integer kundenId, Local
     ResultSet rs = null;
 
     try {
+        // Check if Versicherungsbeginn is in the past
+        if (versicherungsbeginn.isBefore(LocalDate.now())) {
+          throw new DatumInVergangenheitException(versicherungsbeginn);
+        }
+
         // Check if Vertrag already exists
         String sql = "SELECT * FROM Vertrag WHERE id = ?";
         ps = useConnection().prepareStatement(sql);
@@ -127,11 +132,6 @@ public void createVertrag(Integer id, Integer produktId, Integer kundenId, Local
         rs = ps.executeQuery();
         if (!rs.next()) {
             throw new KundeExistiertNichtException(kundenId);
-        }
-
-        // Check if Versicherungsbeginn is in the past
-        if (versicherungsbeginn.isBefore(LocalDate.now())) {
-            throw new DatumInVergangenheitException(versicherungsbeginn);
         }
 
         // Insert the new Vertrag
