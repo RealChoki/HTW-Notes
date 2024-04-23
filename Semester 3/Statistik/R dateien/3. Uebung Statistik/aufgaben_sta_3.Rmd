@@ -44,7 +44,7 @@ kable(huellen_farben)
 ```
 
 a) Um was für eine Tabelle handelt es sich?
-Eine Tabelle, die die Häufigkeit von verschiedenen Hüllenfarben darstellt.
+Häufigkeitstabelle mit absolute Häufigkeit.
 
 b) Fertige ein entsprechendes Balkendiagramm auf Papier an. 
 NEIN
@@ -67,7 +67,7 @@ bp <- barplot(height = huellen_farben$Nennung,
               ylab = "Anzahl der Nennungen")
 
 # Add text labels inside or above the bars
-text(bp, huellen_farben$Nennung, labels = huellen_farben$Nennung, pos = 3, cex = 1)
+text(bp, huellen_farben$Nennung, labels = huellen_farben$Nennung, pos = 3, cex = 0,5)
 
 ```
 
@@ -80,6 +80,10 @@ summe_nennungen <- sum(Nennung)
 prozentuale_anteile <- Nennung / summe_nennungen
 
 absolute_anzahl <- 1000000 * prozentuale_anteile
+
+# Zweite Variante
+f <- prop.table(Nennung)
+f * 1000000
 
 ergebnisse <- data.frame(Hüllen_Farbe=Farbe, Herstellungs_anzahl=absolute_anzahl)
 kable(ergebnisse)
@@ -141,10 +145,13 @@ a) Erzeuge eine Häufigkeitstabelle für die Variable *Previous* (= Anzahl der v
     
     Benutze für die Tabelle einen *Data Frame* in R. Aufgabe 1 zeigt ein Beispiel dafür, wie ein Data Frame mit `data.frame()` erzeugt werden kann.  
 
+setwd("C:/Users/PC/Desktop/HTW-Notes/Semester 3/Statistik/data")
+
 ```{r}
 library(knitr)
 
-setwd("C:/Users/rafaa/Desktop/HTW MODULE/Semester 3/Statistik/data")
+setwd("C:/Users/PC/Desktop/HTW-Notes/Semester 3/Statistik/data")
+getwd()
 data <- read.csv2("Applewood_2011.csv")
 
 # Ausprägungen des Merkmals *Previous*
@@ -208,11 +215,23 @@ e) Benutze die Funktion `ecdf()`, um die relative kumulierte Häufigkeitsverteil
 ```{r}
 
 # Erstelle das Histogramm mit den spezifizierten Gruppen
-hist(data$Profit, 
+hist(data$Profit,
      main = "Frequenz von Profit",
      xlab = "Profit",
-     ylab = "Frequenz",
      breaks = c(seq(0,3000, 250), 3500))
+
+# Erstelle das Histogramm mit den spezifizierten Gruppen
+hist(data$Profit,
+     freq = TRUE,
+     main = "Frequenz von Profit",
+     xlab = "Profit",
+     breaks = c(seq(0,3000, 250), 5000))
+
+# Erstelle das Histogramm mit den spezifizierten Gruppen
+hist(data$Profit,
+     main = "Frequenz von Profit",
+     xlab = "Profit",
+     breaks = c(seq(0,3000, 250), 5000))
 
 # Berechne die relative kumulative Häufigkeitsverteilung von Profit
 ecdf_profit <- ecdf(data$Profit)
