@@ -140,8 +140,8 @@ public class VersicherungJdbc implements IVersicherungJdbc {
           LocalDate versicherungsende = versicherungsbeginn.plusYears(1).minusDays(1);
 
           // Insert the new Vertrag
-          sql = "INSERT INTO Vertrag (id, produktId, kundenId, versicherungsbeginn, Versicherungsende) VALUES (?, ?, ?, ?, ?)";
-          ps = useConnection().prepareStatement(sql);
+          String sql2 = "INSERT INTO Vertrag (id, produkt_fk, kunden_fk, versicherungsbeginn, Versicherungsende) VALUES (?, ?, ?, ?, ?)";
+          ps = useConnection().prepareStatement(sql2);
           ps.setInt(1, id);
           ps.setInt(2, produktId);
           ps.setInt(3, kundenId);
