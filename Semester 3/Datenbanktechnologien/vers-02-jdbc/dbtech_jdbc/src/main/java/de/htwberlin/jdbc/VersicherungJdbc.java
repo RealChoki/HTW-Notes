@@ -102,7 +102,6 @@ public class VersicherungJdbc implements IVersicherungJdbc {
   public void createVertrag(Integer id, Integer produktId, Integer kundenId, LocalDate versicherungsbeginn) {
       PreparedStatement ps = null;
       ResultSet rs = null;
-      String sql = null;
 
       try {
           // Check if Versicherungsbeginn is in the past
@@ -111,7 +110,7 @@ public class VersicherungJdbc implements IVersicherungJdbc {
           }
 
           // Check if Vertrag already exists
-          sql = "SELECT * FROM Vertrag WHERE id = ?";
+          String sql = "SELECT * FROM Vertrag WHERE id = ?";
           ps = useConnection().prepareStatement(sql);
           ps.setInt(1, id);
           rs = ps.executeQuery();
@@ -176,7 +175,7 @@ public class VersicherungJdbc implements IVersicherungJdbc {
           throw new VertragExistiertNichtException(vertragsId);
         } else {
           sql = "SELECT " +
-                  "SUM(dp.preis) " +
+                  "SUM(dp.preis) as preissum " +
                 "FROM " +
                   "kunde k " +
                   "JOIN vertrag v ON k.id = v.kunde_fk " +
@@ -194,7 +193,7 @@ public class VersicherungJdbc implements IVersicherungJdbc {
         rs = ps.executeQuery();
 
         if (rs.next()) {
-          monatsRate = rs.getBigDecimal(1);
+          monatsRate = rs.getBigDecimal("preissum");
         }
       } catch (SQLException e) {
         throw new DataException(e);
