@@ -1,0 +1,165 @@
+---
+title: "Aufgabenblatt 5"
+output:
+  html_document:
+    df_print: paged
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+setwd("C:/Users/rafaa/Desktop/HTW MODULE/Semester 3/Statistik/data")
+getwd()
+list.files()
+
+## Statistik für Wirtschaftsinformatiker, Übung, HTW Berlin
+### Martin Spott, Michael Heimann
+Stand: `r format(Sys.Date(), format='%d.%m.%Y')`
+
+## Wiederholung
+
+* Was versteht man unter dem geometrischen Mittel? Wann benutzt man es? 
+* Was versteht man unter dem harmonischen Mittel? Wann benutzt man es? 
+* Was sind Quantile?
+* Wie konstruiert man einen Boxplot und wozu dient er?
+
+
+## Aufgabe 5.1 (geometrisches Mittel, Quantile)
+
+Lade den Datensatz der Entwicklung des Deutschen Aktienindex (DAX-30) von 2004 bis 2014 als `dax30.csv` von Moodle herunter und importiere ihn in R. 
+```{r}
+# Pfad zur Datei anpassen
+dax30 <- read.csv("C:/Users/rafaa/Desktop/HTW MODULE/Semester 3/Statistik/data/dax30.csv")
+# benutze alternativ den Dialog zum Öffnen einer Datei
+# dax30 <- read.csv(file.choose())
+
+dax30
+```
+
+Mache dich mit den R-Befehlen `summary()` und `boxplot()` vertraut. 
+
+a) Berechne die Fünf-Punkte-Zusammenfassung von Höchstkurs und Tiefstkurs. Erzeuge Boxplots für die beiden Merkmale, benutze dazu die gleichnamige Funktion in R. Interpretiere die Unterschiede der beiden Boxplots bzw. deren Überlappung. Finde heraus, wie man beide Boxplots mit einem Aufruf von `boxplot()` in einer Grafik nebeneinander zeichnet.  
+```{r}
+#a)
+
+# Berechnung der Fünf-Punkte-Zusammenfassung
+summary_high <- summary(dax30$Hoechstkurs)
+summary_low <- summary(dax30$Tiefstkurs)
+
+summary_high
+summary_low
+# Erzeugen der Boxplots
+boxplot(dax30$Hoechstkurs, dax30$Tiefstkurs)
+```
+
+
+b) Berechne auf der Grundlage der Jahresendwerte die Wachstumsfaktoren für 2005 bis 2014. 
+```{r}
+# b)
+jahrend5_14 <- dax30$Jahresende[dax30$Jahr >= 2005 & dax30$Jahr <= 2014]
+jahrend5_14
+
+jahrend4_13 <- dax30$Jahresende[dax30$Jahr >= 2004 & dax30$Jahr <= 2013]
+jahrend4_13
+
+wachstrumsfaktor <- jahrend5_14 / jahrend4_13
+wachstrumsfaktor
+
+#c)
+wachstrumsfaktor * 100
+
+#d)
+#Das geometrische Mittel wird gewählt, da es besser mit multiplikativen Daten wie Finanzwerten umgeht und weniger anfällig für Ausreißer ist.
+
+```
+
+
+$$\text{Wachstumsfaktor\ \ } f_t = \frac{x_t}{x_{t-1}}\left(=\frac{x\text{ zum Zeitpunkt }t}{x\text{ zum Zeitpunkt }t-1}\right)$$
+
+c) Berechne das durchschnittliche Wachstum der Jahresendwerte des DAX von 2004 bis 2014 in Prozent.
+
+d) Begründe die Wahl des geometrischen Mittels zur Berechnung. 
+
+
+
+## Aufgabe 5.2 (harmonisches Mittel)
+Ein Techniker erledigt an einem Tag drei Jobs bei Kunden und fährt insgesamt 80km. Er fährt morgens von zu Hause 15km lang mit im Schnitt 60km/h zum ersten Kunden, dann 10km weit in 12 Minuten zum zweiten Kunden, dann 40km mit 80km/h zum dritten Kunden und von dort mit durchschnittlich 70km/h nach Hause. Berechne die mittlere Geschwindigkeit über die gesamte Fahrt.   
+```{r}
+Geschwindigkeit <- 80 / ((15 / 60) + (10 / 50) + (40 / 80) + (15 / 80))
+Geschwindigkeit
+```
+
+
+## Aufgabe 5.3 (Quantile, Spannweite, IQR, mittlere absolute Abweichung)
+Beachte: Eine Zahl $q_p$ mit $0 < p < 1$ heißt \emph{p-Quantil}, wenn sie die statistische Reihe $X$  so aufteilt, dass mindestens $100\cdot p$\% ihrer Beobachtungswerte kleiner oder gleich  $q_p$ sind und gleichzeitig mindestens $100\cdot (1-p)$ \% größer oder gleich $q_p$ sind.
+Besondere (bzw. häufig verwendete) Qua**n**tile sind:
+
+* $Q_1= q_{0,25}=$  unteres Qua**r**til oder erstes Qua**r**til 
+* $Q_2= q_{0,5}=$   zweites Qua**r**til oder Median
+* $Q_3= q_{0,75}=$  drittes Qua**r**til
+
+Eine Aufteilung in 10 oder 100 Anteilswerte führt zu Dezilen oder Perzentilen. $q_p$ wird in der Literatur oft auch mit $\tilde{x}_p$ und $x[p]$ bezeichnet.
+
+Lade den Datensatz `bmw.csv` von Moodle herunter und importiere ihn in R.
+```{r}
+# Benutze den richtigen Pfad in "bmw.csv" oder stattdessen file.choose()
+bmw <- read.csv2("C:/Users/rafaa/Desktop/HTW MODULE/Semester 3/Statistik/data/bmw.csv", header= T, sep= ";", dec=".")
+bmw
+```
+
+Informiere dich über den Datensatz mit den bereits bekannten R-Befehlen. Mache dich mit dem Befehl `quantile()` vertraut (benutze `type=2` als Parameter). 
+
+a) Was beinhaltet der Datensatz deiner Ansicht nach?    
+
+b) Erstelle mit der R-Anweisung `hist()` ein Histogramm der Variable *Schluss*.  
+
+c) Erstelle einen Boxplot für diese Variable.  Was ist hier alles zu sehen?  
+
+d) Berechne für die Variable *Schluss*  Mittelwert, Spannweite, 
+$Q_1$,   $Q_2$,   $Q_3$ und den  Quartilsabstand (auch: IQR, Interquartilsabstand, zentraler Quartilsabstand).  
+
+<!-- e) Berechne die absolute mittlere Abweichung für die Variable *Schluss*. -->
+
+e)  Berechne die Terzile (Drittelung) und die Dezile für die Variable *Schluss*. Interpretiere das zweite Terzil für die Variable *Schluss*.
+
+```{r}
+#a) 
+#Datum: Das Datum, an dem der Handel stattgefunden hat.
+#Eröffnung: Der Eröffnungskurs der Aktie am Handelstag.
+#Hoch: Der Höchstkurs, den die Aktie während des Handelstages erreicht hat.
+#Tief: Der Tiefstkurs, den die Aktie während des Handelstages erreicht hat.
+#Schluss: Der Schlusskurs der Aktie am Handelstag.
+#Volumen: Das gehandelte Volumen der Aktie an diesem Tag.
+
+#b)
+hist(bmw$Schluss)
+
+#c)
+boxplot(bmw$Schluss)
+
+#d)
+quan <- quantile(bmw$Schluss, type=2)
+quan
+
+#Mittelwert
+quan[3]
+
+#Spannweite
+quan[5] - quan[1]
+
+#Q1, Q2, Q3
+quan[2:4]
+
+#IQR
+quan[4] - quan[2]
+
+#e)
+# Terzile berechnen
+quantile(bmw$Schluss, probs = seq(0, 1, by = 1/3))
+
+# Dezile berechnen
+quantile(bmw$Schluss, probs = seq(0, 1, by = 0.1))
+```
+
+
