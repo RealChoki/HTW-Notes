@@ -5,18 +5,27 @@ package de.htwberlin.jdbc;
  */
 
 import java.math.BigDecimal;
-import java.sql.*;
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
 import java.time.LocalDate;
 import java.util.LinkedList;
 import java.util.List;
 
-import de.htwberlin.exceptions.*;
-import de.htwberlin.utils.DateUtils;
-import de.htwberlin.utils.JdbcUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import de.htwberlin.domain.Kunde;
+import de.htwberlin.exceptions.DataException;
+import de.htwberlin.exceptions.DatumInVergangenheitException;
+
+import static de.htwberlin.utils.DateUtils.sqlDate2LocalDate;
+import static de.htwberlin.utils.DateUtils.localDate2SqlDate;
+import de.htwberlin.exceptions.KundeExistiertNichtException;
+import de.htwberlin.exceptions.ProduktExistiertNichtException;
+import de.htwberlin.exceptions.VertragExistiertBereitsException;
+import de.htwberlin.exceptions.VertragExistiertNichtException;
 
 /**
  * VersicherungJdbc
@@ -41,159 +50,135 @@ public class VersicherungJdbc implements IVersicherungJdbc {
   @Override
   public List<String> kurzBezProdukte() {
     List<String> kurzBez = new LinkedList<>();
-    String sql = "SELECT kurzbez FROM produkt ORDER BY id ASC";
+
+    String sql = "SELECT kurzbez FROM produkt ORDER BY id";
     PreparedStatement ps = null;
     ResultSet rs = null;
+
     try {
       ps = useConnection().prepareStatement(sql);
       rs = ps.executeQuery();
+
       while (rs.next()) {
-        kurzBez.add(rs.getString("kurzBez"));
+        kurzBez.add(rs.getString("kurzbez"));
       }
     } catch (SQLException ex) {
       throw new DataException(ex);
-    } finally {
-      JdbcUtils.closeResultSetQuietly(rs);
-      JdbcUtils.closeStatementQuietly(ps);
-      JdbcUtils.closeConnectionQuietly(connection);
     }
+
     return kurzBez;
   }
 
   @Override
   public Kunde findKundeById(Integer id) {
     Kunde kunde = null;
-    String sql = "SELECT * FROM kunde WHERE id = ?";
+    String sql = "SELECT * FROM Kunde WHERE id = ?";
     PreparedStatement ps = null;
     ResultSet rs = null;
 
     try {
-      if (!idExists(id, "kunde")) throw new KundeExistiertNichtException(id);
-
       ps = useConnection().prepareStatement(sql);
-      ps.setLong(1, id);
+      ps.setInt(1, id);
       rs = ps.executeQuery();
+
       if (rs.next()) {
-        kunde = new Kunde(
-                rs.getInt("id"),
-                rs.getString("name"),
-                DateUtils.sqlDate2LocalDate(rs.getDate("geburtsdatum")));
+        kunde = new Kunde(id, rs.getString("name"), sqlDate2LocalDate(rs.getDate("geburtsdatum")));
+      } else {
+        throw new KundeExistiertNichtException(id);
       }
+    } catch (SQLException ex) {
+      throw new DataException(ex);
     }
-    catch (SQLException ex) {
-      throw new KundeExistiertNichtException(id);
-    } finally {
-      JdbcUtils.closeResultSetQuietly(rs);
-      JdbcUtils.closeStatementQuietly(ps);
-      JdbcUtils.closeConnectionQuietly(connection);
-    }
+
     return kunde;
   }
 
   @Override
   public void createVertrag(Integer id, Integer produktId, Integer kundenId, LocalDate versicherungsbeginn) {
-
-    PreparedStatement ps = null;
-    PreparedStatement psUpdate = null;
-
-    // Check if Versicherungsbeginn is in the past
-    try {
-      if (versicherungsbeginn.isBefore(LocalDate.now())) {
-        throw new DatumInVergangenheitException(versicherungsbeginn);
-      }
-
-      // Check if the Vertrag already exists,
-      // if product and Kunde and Produkt exist
-      if (idExists(id, "vertrag")) throw new VertragExistiertBereitsException(id);
-      if (!idExists(produktId, "produkt")) throw new ProduktExistiertNichtException(produktId);
-      if (!idExists(kundenId, "kunde")) throw new KundeExistiertNichtException(kundenId);
-
-      // Calculate Versicherungsende
-      LocalDate versicherungsende = versicherungsbeginn.plusYears(1).minusDays(1);
-
-      // Insert the new Vertrag
-      String sqlUpdate = "INSERT INTO Vertrag VALUES (?, ?, ?, ?, ?)";
-
-      psUpdate = useConnection().prepareStatement(sqlUpdate);
-
-      psUpdate.setInt(1, id);
-      psUpdate.setInt(2, produktId);
-      psUpdate.setInt(3, kundenId);
-      psUpdate.setDate(4, DateUtils.localDate2SqlDate(versicherungsbeginn));
-      psUpdate.setDate(5, DateUtils.localDate2SqlDate(versicherungsende)); // Set Versicherungsende
-
-      int rowsUpdated = psUpdate.executeUpdate();
-
-    } catch (SQLException e) {
-      // Handle SQL exception
-      L.error("SQL error: " + e.getMessage());
-    } finally {
-      JdbcUtils.closeStatementQuietly(ps);
-      JdbcUtils.closeStatementQuietly(psUpdate);
+    if (versicherungsbeginn.isBefore(LocalDate.now())) {
+      throw new DatumInVergangenheitException(versicherungsbeginn);
     }
 
-    L.info("ende");
+    try {
+      String sql = "SELECT * FROM vertrag WHERE id = ?";
+      PreparedStatement ps = null;
+      ResultSet rs = null;
+      ps = useConnection().prepareStatement(sql);
+      ps.setInt(1, id);
+      rs = ps.executeQuery();
+
+      if (rs.next()) {
+        throw new VertragExistiertBereitsException(id);
+      }
+
+      sql = "SELECT * FROM produkt WHERE id = ?";
+      ps = useConnection().prepareStatement(sql);
+      ps.setInt(1, produktId);
+      rs = ps.executeQuery();
+
+      if (!rs.next()) {
+        throw new ProduktExistiertNichtException(produktId);
+      }
+
+      sql = "SELECT * FROM kunde WHERE id = ?";
+      ps = useConnection().prepareStatement(sql);
+      ps.setInt(1, kundenId);
+      rs = ps.executeQuery();
+
+      if (!rs.next()) {
+        throw new KundeExistiertNichtException(kundenId);
+      }
+
+      String sqlQuery = "INSERT INTO vertrag (id, produkt_FK, kunde_FK, versicherungsbeginn, versicherungsende) VALUES (?, ?, ?, ?, ?)";
+      ps = null;
+      ps = useConnection().prepareStatement(sqlQuery);
+      ps.setInt(1, id);
+      ps.setInt(2, produktId);
+      ps.setInt(3, kundenId);
+      ps.setDate(4, localDate2SqlDate(versicherungsbeginn));
+      LocalDate localDateEnd = versicherungsbeginn.plusYears(1).minusDays(1);
+      ps.setDate(5, localDate2SqlDate(localDateEnd));
+      rs = ps.executeQuery();
+
+    } catch (SQLException ex) {
+      throw new DataException(ex);
+    }
   }
 
   @Override
   public BigDecimal calcMonatsrate(Integer vertragsId) {
-
+    BigDecimal monatsrate = BigDecimal.ZERO;
+    String sql = "SELECT " +
+        "SUM(dp.preis) " +
+        "FROM " +
+        "kunde k " +
+        "JOIN vertrag v ON k.id = v.kunde_fk " +
+        "JOIN deckung d ON v.id = d.vertrag_fk " +
+        "JOIN deckungsart da ON d.deckungsart_fk = da.id " +
+        "JOIN deckungsbetrag db ON da.id = db.deckungsart_fk " +
+        "JOIN deckungspreis dp ON db.id = dp.deckungsbetrag_fk " +
+        "WHERE " +
+        "v.id = ? " +
+        "AND " +
+        "v.versicherungsbeginn BETWEEN dp.gueltig_von AND dp.gueltig_bis";
     PreparedStatement ps = null;
     ResultSet rs = null;
 
-    String sql = "SELECT sum(dp.preis) AS result " +
-            "FROM kunde k JOIN vertrag v ON k.id = v.kunde_fk " +
-            "JOIN deckung d ON v.id = d.vertrag_fk " +
-            "JOIN deckungsart da ON d.deckungsart_fk = da.id " +
-            "JOIN deckungsbetrag db ON da.id = db.deckungsart_fk " +
-            "JOIN deckungspreis dp ON db.id = dp.deckungsbetrag_fk " +
-            "WHERE v.id = ? AND v.versicherungsbeginn BETWEEN dp.gueltig_von AND dp.gueltig_bis " +
-            "GROUP BY v.id";
     try {
       ps = useConnection().prepareStatement(sql);
       ps.setInt(1, vertragsId);
       rs = ps.executeQuery();
 
-      if(rs.next()) {
-        return BigDecimal.valueOf(rs.getInt("result"));
+      if (rs.next()) {
+        monatsrate = rs.getBigDecimal(1);
       } else {
-        // Checks if the contact exists
-        if (!idExists(vertragsId, "vertrag")) throw new VertragExistiertNichtException(vertragsId);
-        return BigDecimal.ZERO;
+        throw new VertragExistiertNichtException(vertragsId);
       }
     } catch (SQLException ex) {
       throw new DataException(ex);
-    } finally {
-      JdbcUtils.closeResultSetQuietly(rs);
-      JdbcUtils.closeStatementQuietly(ps);
     }
+
+    return monatsrate == null ? BigDecimal.ZERO : monatsrate;
   }
 
-  /*
-  Checks if the id exists, boolean is given away 
-
-  @param     id the id that should be checked
-  @param     table that should be checked
-   */
-  private boolean idExists(Integer id, String table) throws SQLException {
-
-    PreparedStatement ps = null;
-    ResultSet rs = null;
-
-    try {
-      String sql = "SELECT * FROM " + table + " WHERE id = ?";
-      ps = useConnection().prepareStatement(sql);
-      ps.setInt(1, id);
-      rs = ps.executeQuery();
-      if (rs.next()) {
-        return true;
-      }
-    } catch (SQLException ex) {
-      throw new SQLException(ex);
-    } finally {
-      JdbcUtils.closeResultSetQuietly(rs);
-      JdbcUtils.closeStatementQuietly(ps);
-    }
-    return false;
-  }
 }

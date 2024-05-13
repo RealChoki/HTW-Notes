@@ -135,6 +135,9 @@ plot(F_i_star, F_i, type = "l", col = "blue", xlab = "Kumulierte relative Stueck
 Erzeuge für die Daten aus Aufgabe 6.4 eine Lorenzkurve mit Hilfe des R-Paketes `ineq`. Betrachte dazu die Funktion `Lc()`, untersuche das Datenobjekt, das durch die Funktion erzeugt wird und plotte die Lorenzkurve.
 
 ```{r}
+
+library(ineq)
+
 lorenz <- Lc(Stueckzahl)
 
 # Lorenzkurve plotten
@@ -188,10 +191,36 @@ Berechne näherungsweise das arithmetische Mittel und die Standardabweichung fü
 
 Die Daten beschreiben die Lebensdauer von Bauteilen in Stunden gruppiert in folgende Intervalle:       
 ```{r}
+library(knitr)
+
+# Given data
 Intervall <- c("[300, 400)", "[400, 500)", "[500, 600)", "[600, 700)", "[700, 800)")
 Haeufigkeit <- c(13, 25, 66, 58, 38)
-lebensdauer <- data.frame(Intervall, Haeufigkeit)
+index <- 1:length(Intervall)
+
+# Function to calculate the interval midpoint
+berechne_intervallmitte <- function(intervall) {
+  clean_interval <- gsub("\\[|\\)|\\(|\\]", "", intervall)
+  bounds <- as.numeric(unlist(strsplit(clean_interval, ",")))
+  return(mean(bounds))
+}
+
+# Calculate interval midpoint for each interval
+intervallmitte <- sapply(Intervall, berechne_intervallmitte)
+
+# Relative Häufigkeit
+rel_heufigkeit <-  Haeufigkeit / sum(Haeufigkeit) 
+
+
+rel_heufigkeitXintervallmitte = intervallmitte * rel_heufigkeit
+intervallmitte2 = intervallmitte^2
+rel_heufigkeitXintervallmitte2 = intervallmitte2 * rel_heufigkeit
+# Create the data frame
+lebensdauer <- data.frame(index = index, Intervall = Intervall, Haeufigkeit = Haeufigkeit, Intervallmitte = intervallmitte, rel_heufigkeit = rel_heufigkeit, rel_heufigkeitXintervallmitte = rel_heufigkeitXintervallmitte, intervallmitte2 = intervallmitte2, rel_heufigkeitXintervallmitte2=rel_heufigkeitXintervallmitte2)
+
+# Print the data frame
 kable(lebensdauer)
+
 ```
 
 Füge zur Berechnung folgende Spalten zu `lebensdauer` hinzu:
