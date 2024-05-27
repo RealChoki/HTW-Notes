@@ -1,0 +1,108 @@
+---
+output:
+  html_document: default
+  html_notebook: default
+  pdf_document: default
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# Aufgabenblatt 9
+## Statistik für Wirtschaftsinformatiker, Übung, HTW Berlin
+### Michael Heimann, Shirin Riazy
+Stand: `r format(Sys.Date(), format='%d.%m.%Y')`
+
+## Wiederholung
+
+* Was ist Korrelation?
+* Was ist lineare Regression?
+* Was ist die Gleichung für eine Gerade?
+* Welche ist die unabhängige und welche ist die abhängige Variable in der Gleichung?
+
+## Aufgabe 9.1 (Regressionsrechnung)
+Laden Sie den Datensatz `Readiq` aus dem R-Paket `BSDA`.
+```{r, message=FALSE}
+library(BSDA)
+data(Readiq)
+```
+
+a) Machen Sie sich mit dem Datensatz vertraut. Was sind die beiden Merkmale in dem Datensatz?
+b) Fertigen Sie ein Streudiagramm (Scatterplot) an.
+c) Bestimmem Sie den Korrelationskoeffizienten nach Pearson für die beiden Merkmale. Liegt keine, eine schwache, eine mittlere oder eine starke positive bzw. negative Korrelation zwischen beiden Merkmalen vor? Was bedeutet dies?
+d) Bestimmen Sie die Geradengleichung der linearen Regression mit `Readiq$reading` als unabhängige und `Readiq$iq` als abhängige Variable. Berechnen Sie dazu die Werte von $a$ und $b$ in R mit den Formeln aus der Vorlesung. Hinweis: Obwohl `sd()` in R die Stichprobenvarianz und nicht die empirische Varianz aus den Formeln ist, kann `sd()` benutzt werden, da sich die Faktoren ($1/n$ bzw. $1/(n+1)$) in der Formel herauskürzen.
+e) Fügen Sie dem Streuungsdiagramm von `Readiq$reading` und `Readiq$iq` die Regressionsgerade zu. Hinweis: Benutze `abline()`. 
+
+## Aufgabe 9.2 (Regressionsrechnung)
+Über die Einführung des Mindestlohns wurde lange diskutiert. Ende 2007 veröffentlichte die *Wirtschaftswoche* folgende Daten zu Mindestlohn (in Euro) und 
+Arbeitslosenquote (in Prozent):
+```{r}
+library(knitr)
+mindestlohn_tabelle <- data.frame(row.names = c("Irland", "Frankreich", "Großbritannien", 
+                                            "Belgien", "Niederlande", "USA", "Spanien"), 
+                          Mindestlohn = c(8.65, 4.44, 8.2, 8.08, 8.08, 4.3, 3.42), 
+                          Arbeitslosenquote = c(4.4, 9.0, 5.5, 8.2, 5.5, 4.6, 8.5))
+
+kable(mindestlohn_tabelle)
+```
+
+Gibt es einen linearen Zusammenhang zwischen *Mindestlohn* (unabhängige Variable) und 
+*Arbeitslosenquote*? Stellen Sie die Daten in einem  Streudiagramm dar, berechnen Sie die Regressionsgerade und fügen Sie sie dem Streudiagramm zu. Ist die Regressionsgerade eine sinnvolle Beschreibung der Daten?
+
+Hinweis: Benutzen Sie diesmal die Funktion `lm()` in R zur Berechnung der Regressionsgeraden. Weisen Sie das Ergebnis des Aufrufs einer Variablen zu: `regression <- lm(...)`. Untersuchen Sie die Ausgabe von `regression` und `summary(regression)` und vergleichen Sie zur Interpretation auch die Folien der Vorlesung.
+
+## Aufgabe 9.3 (Regressionsrechnung)
+Benutzen Sie wieder die Daten des Mietspiegels in München von 2003. 
+
+```{r}
+mietspiegel <- read.table("miete03.asc", header=TRUE)
+```
+
+a) Stellen Sie den Zusammenhang zwischen der Wohnfläche `mietspiegel$wfl` als unabhängiger und Nettomiete `mietspiegel$nm` als abhängiger Variable als Streudiagramm und durch die Regressionsgerade dar. 
+b) Stellen Sie die Geradengleichung auf und berechnen die Nettomieten für die Wohnflächen 60qm, 100qm und 150qm, die sich aus der Geradengleichung als Schätzwerte ergeben. 
+c) Betrachten Sie wie in Aufgabe 9.2 das Regressionsobjekt mit `summary()`. Wie viel Prozent der Varianz von Nettomiete wird durch die Wohnfläche erklärt? 
+
+## Aufgabe 9.4 (Mehrdimensionale Regressionsrechnung)
+
+Wir benutzen `mietspiegel` aus Aufgabe 9.3 und untersuchen, ob wir Nettomiete besser schätzen können, indem wir weitere Informationen berücksichtigen. Wir können z.B. das Merkmal `wohnbest` durch 
+```{r, eval=FALSE}
+lm(nm ~ wfl + wohnbest, data = mietspiegel)
+```
+zusätzlich zu `wfl` als Information der Regression zufügen. 
+
+Die Qualität des Regressionsmodells kann in `summary()` anhand der Werte von 
+
+* *Residuals* (je kleiner die Beträge, desto besser)
+* *Residual Standard Error* (je kleiner desto besser)
+* *Adjusted R-Squared* (je größer desto besser)
+
+abgelesen werden. 
+
+Fügen Sie `wohnbest`, `ww0` und `kueche` jeweils einzeln und in Kombination dem Regressionsmodell zu und vergleichen Sie die Qualität der Modelle mit Hilfe von `summary()`. Welches ist das beste Modell?
+
+
+## Aufgabe 9.5 (Regressionsrechnung mit Polynomen höherer Ordnung)
+Lineare Regression kann auch mit komplexeren Funktionen durchgeführt werden wie z.B. quadratischen Funktionen $f(x) = a_1 \cdot x + a_2 \cdot x^2 + b$. In R kann man für diesen Fall statt der Formel `y ~ x` in der Funktion `lm()` Formeln wie `y ~ poly(x,2)` für ein quadratisches Polynom benutzen. 
+
+Berechnen Sie für den folgenden Datensatz $(x,y)$ eine lineare Regression mit linearen, quadratischen und kubischen Formeln. Plotten Sie alle drei Ergebnisse als Kurven (Linienplot) im Streudiagramm der Daten. Vergleichen Sie die Güte der drei Modelle über `summary()`.   
+
+```{r}
+x <- runif(100, 0, 100)
+e <- runif(100, 0, 50)
+y <- x^2 + x * e
+```
+
+## Aufgabe 9.6 (Rangkorrelation)
+Berechnen Sie in folgenden drei Datensätzen die Pearson-, Kendall- und Spearman-Korrelationen (r, Rho, Tau) zwischen $x$ und $y$. Erklären Sie die Unterschiede in den Werten. Erstellen Sie zur Hilfe Streudiagramme der drei Datensätze. Welche Korrelationsmaße sind warum für welchen Datensatz geeignet oder nicht?
+
+```{r}
+y1 <- x + e
+y2 <- y1^4
+y3 <- (x - 50)^2 + 30 * e
+
+data1 <- data.frame(x=x, y=y1)
+data2 <- data.frame(x=x, y=y2)
+data3 <- data.frame(x=x, y=y3)
+```
+
