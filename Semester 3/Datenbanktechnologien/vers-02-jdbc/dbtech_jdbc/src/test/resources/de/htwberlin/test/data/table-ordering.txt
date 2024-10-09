@@ -1,8 +1,0 @@
-produkt
-kunde
-deckungsart
-ablehnungsregel
-vertrag
-deckungsbetrag
-deckungspreis
-deckung
